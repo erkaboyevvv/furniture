@@ -1,0 +1,251 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// generator crud {
+//   provider = "prisma-crud-generator"
+//   output   = "./generated/testuchun"
+// }
+
+model Colors {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  furniture Furniture[]
+
+  @@map("colors")
+}
+
+model Materials {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  furniture Furniture[]
+
+  @@map("materials")
+}
+
+model RoomTypes {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  furniture Furniture[]
+
+  @@map("room_types")
+}
+
+model FurnitureTypes {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  furniture Furniture[]
+
+  @@map("furniture_types")
+}
+
+model FurniturePhotos {
+  id           Int        @id @default(autoincrement())
+  Furniture    Furniture? @relation(fields: [furniture_id], references: [id])
+  furniture_id Int?
+  url          String
+  caption      String
+
+  @@map("furniture_photos")
+}
+
+model Furniture {
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  produced_date       String
+  Colors              Colors?              @relation(fields: [colors_id], references: [id])
+  colors_id           Int?
+  Materials           Materials?           @relation(fields: [materials_id], references: [id])
+  materials_id        Int?
+  RoomTypes           RoomTypes?           @relation(fields: [roomTypes_id], references: [id])
+  roomTypes_id        Int?
+  FurnitureTypes      FurnitureTypes?      @relation(fields: [furniture_types_id], references: [id])
+  furniture_types_id  Int?
+  description         String
+  height              Decimal
+  width               Decimal
+  price               Decimal
+  furniture_photos    FurniturePhotos[]
+  furniture_comments  FurnitureComments[]
+  furniture_likes     FurnitureLikes[]
+  contracts_detailing ContractsDetailing[]
+
+  @@map("furniture")
+}
+
+model Users {
+  id                   Int                  @id @default(autoincrement())
+  full_name            String
+  birth_date           String?
+  phone_number         String?
+  email                String               @unique
+  hashed_password      String
+  hashed_refresh_token String?
+  activation_link      String
+  is_active            Boolean              @default(false)
+  furniture_comments   FurnitureComments[]
+  furniture_likes      FurnitureLikes[]
+  user_card            UserCard[]
+  user_address         UserAddress[]
+  payment              Payment[]
+  contracts            Contracts[]
+  contracts_detailing  ContractsDetailing[]
+
+  @@map("users")
+}
+
+model FurnitureComments {
+  id           Int        @id @default(autoincrement())
+  Users        Users?     @relation(fields: [users_id], references: [id])
+  users_id     Int?
+  Furniture    Furniture? @relation(fields: [furniture_id], references: [id])
+  furniture_id Int?
+  user_comment String
+
+  @@map("furniture_comments")
+}
+
+model FurnitureLikes {
+  id           Int        @id @default(autoincrement())
+  Users        Users?     @relation(fields: [users_id], references: [id])
+  users_id     Int?
+  Furniture    Furniture? @relation(fields: [furniture_id], references: [id])
+  furniture_id Int?
+
+  @@map("furniture_likes")
+}
+
+model Admins {
+  id                   Int          @id @default(autoincrement())
+  full_name            String
+  birth_date           String?
+  phone_number         String       @unique
+  email                String       @unique
+  hashed_password      String?
+  hashed_refresh_token String?
+  is_creator           Boolean      @default(false)
+  admin_roles          AdminRoles[]
+
+  @@map("admins")
+}
+
+model Roles {
+  id          Int          @id @default(autoincrement())
+  value       String       @unique
+  description String
+  admin_roles AdminRoles[]
+
+  @@map("roles")
+}
+
+model AdminRoles {
+  id        Int     @id @default(autoincrement())
+  Admins    Admins? @relation(fields: [admins_id], references: [id])
+  admins_id Int?
+  Roles     Roles?  @relation(fields: [roles_id], references: [id])
+  roles_id  Int?
+
+  @@map("admin_roles")
+}
+
+model UserCard {
+  id              Int       @id @default(autoincrement())
+  Users           Users?    @relation(fields: [users_id], references: [id])
+  users_id        Int?
+  card_number     String
+  card_expiration String
+  phone_number    String
+  payment         Payment[]
+
+  @@map("user_card")
+}
+
+model UserAddress {
+  id                  Int     @id @default(autoincrement())
+  Users               Users?  @relation(fields: [users_id], references: [id])
+  users_id            Int
+  city                String
+  area                String
+  street              String
+  house               String
+  apartment_or_office String
+  entrance            String?
+  floor               Int?
+  intercom_code       String?
+
+  @@map("user_address")
+}
+
+model Supplier {
+  id                   Int         @id @default(autoincrement())
+  full_name            String
+  phone_number_1       String
+  phone_number_2       String
+  email                String      @unique
+  hashed_password      String
+  hashed_refresh_token String?
+  car_name             String
+  car_number           String
+  car_size             String
+  contracts            Contracts[]
+
+  @@map("supplier")
+}
+
+model Payment {
+  id             Int        @id @default(autoincrement())
+  Users          Users?     @relation(fields: [users_id], references: [id])
+  users_id       Int?
+  Contracts      Contracts? @relation(fields: [contracts_id], references: [id])
+  contracts_id   Int?
+  UserCard       UserCard?  @relation(fields: [user_card_id], references: [id])
+  user_card_id   Int?
+  company_card   String
+  payment_amount Decimal
+  payment_status String
+  payment_date   String
+
+  @@map("payment")
+}
+
+model Contracts {
+  id                  Int                  @id @default(autoincrement())
+  Users               Users?               @relation(fields: [users_id], references: [id])
+  users_id            Int?
+  Supplier            Supplier?            @relation(fields: [supplier_id], references: [id])
+  supplier_id         Int?
+  delivery_date       String
+  note_to_supplier    String?
+  hours               String
+  delivery_status     String
+  contracts_detailing ContractsDetailing[]
+  payment             Payment[]
+
+  @@map("contracts")
+}
+
+model ContractsDetailing {
+  id            Int        @id @default(autoincrement())
+  Users         Users?     @relation(fields: [users_id], references: [id])
+  users_id      Int?
+  Furniture     Furniture? @relation(fields: [furniture_id], references: [id])
+  furniture_id  Int?
+  Contracts     Contracts? @relation(fields: [contracts_id], references: [id])
+  contracts_id  Int?
+  count         Int
+  total_price   Decimal
+  contract_date String
+
+  @@map("contracts_detailing")
+}

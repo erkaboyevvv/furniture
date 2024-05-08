@@ -13,9 +13,7 @@ import { Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { LoginAuthDto, Tokens } from '../auth/dto';
 import { AuthSupplierService } from './auth.supplier.service';
-import { UserGuard } from 'src/guards/auth.guard';
 import { CookieGetter } from 'src/decorators/cookieGetter.decorator';
-import { AdminGuard } from 'src/guards/admin.guard';
 
 @Controller('auth/supplier')
 export class AuthSupplierController {

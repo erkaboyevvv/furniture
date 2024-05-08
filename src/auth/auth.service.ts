@@ -37,7 +37,7 @@ export class AuthService {
       sub: userId,
       email: email,
       is_active: user.is_active,
-      role: "user"
+      role: 'user',
     };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(jwtPayload, {
@@ -78,7 +78,7 @@ export class AuthService {
           activation_link: link,
         },
       });
-      
+
       if (!user) {
         return new BadRequestException('Invalid activation link');
       }
@@ -93,14 +93,14 @@ export class AuthService {
           is_active: true,
         },
       });
-      
+
       const response = {
         message: 'User activated successfully',
         patient: updatedUser.is_active,
       };
       return response;
     } catch (error) {
-      return err(error)
+      return err(error);
     }
   }
 
@@ -113,7 +113,10 @@ export class AuthService {
 
     const activation_link = v4();
 
-    const newUser = await this.usersService.create({...createUserDto , activation_link});
+    const newUser = await this.usersService.create({
+      ...createUserDto,
+      activation_link,
+    });
 
     if (!newUser) {
       throw new InternalServerErrorException('Yangi user yaratishda xatolik');
@@ -129,7 +132,11 @@ export class AuthService {
     );
 
     try {
-      await this.mailerService.sendMailUser({ email: newUser._unsafeUnwrap().email , full_name: newUser._unsafeUnwrap().full_name , activation_link: newUser._unsafeUnwrap().activation_link});
+      await this.mailerService.sendMailUser({
+        email: newUser._unsafeUnwrap().email,
+        full_name: newUser._unsafeUnwrap().full_name,
+        activation_link: newUser._unsafeUnwrap().activation_link,
+      });
     } catch (error) {
       throw new BadRequestException('Error sending email');
     }
@@ -153,9 +160,8 @@ export class AuthService {
     }
 
     console.log(user.is_active);
-    
 
-    if(user.is_active == false) {
+    if (user.is_active == false) {
       return new BadRequestException('User not activated');
     }
 
@@ -241,7 +247,6 @@ export class AuthService {
     }
 
     console.log(userData);
-    
 
     await this.prismaService.users.update({
       where: { id: userData.sub },
@@ -251,6 +256,49 @@ export class AuthService {
     res.clearCookie('refresh_token');
 
     return { message: 'User logged out successfully' };
+  }
+
+  async changePass(
+    id: number,
+    changePassDto: {
+      old_password: string;
+      password: string;
+      confirm_password: string;
+    },
+  ) {
+    const user = await this.prismaService.users.findUnique({
+      where: { id: Number(id) },
+    });
+
+    if (!user) {
+      return err(new BadRequestException('User not found'));
+    }
+    const isValidPassword = await bcrypt.compare(
+      changePassDto.old_password,
+      user.hashed_password,
+    );
+
+    if (!isValidPassword) {
+      return err(new BadRequestException('Invalid password'));
+    }
+
+    if (changePassDto.password !== changePassDto.confirm_password) {
+      return err(new BadRequestException("Passwords don't match"));
+    }
+
+    const pass = await bcrypt.hash(changePassDto.password, 7);
+    await this.prismaService.users.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        hashed_password: pass,
+      },
+    });
+
+    return {
+      message: 'Password changed successfully',
+    };
   }
 
   create(createAuthDto: CreateAuthDto) {

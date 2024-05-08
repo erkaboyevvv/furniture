@@ -17,7 +17,7 @@ import { err } from 'neverthrow';
 export class AuthAdminService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
   ) {}
   async getTokens(adminId: number, email: string): Promise<Tokens> {
     const admin = await this.prismaService.admins.findUnique({
@@ -66,30 +66,27 @@ export class AuthAdminService {
     createAdminDto.hashed_password = pass;
 
     const find = await this.prismaService.admins.findUnique({
-      where: {email: createAdminDto.email}
-    })
+      where: { email: createAdminDto.email },
+    });
 
     if (find) {
-      return err(new BadRequestException("User already created"))
+      return err(new BadRequestException('User already created'));
     }
 
-    const newAdmin = await this.prismaService.admins.create({data: createAdminDto});
+    const newAdmin = await this.prismaService.admins.create({
+      data: createAdminDto,
+    });
 
     console.log(newAdmin);
-    
 
     if (!newAdmin) {
-      return err(new InternalServerErrorException('Yangi admin yaratishda xatolik'));
+      return err(
+        new InternalServerErrorException('Yangi admin yaratishda xatolik'),
+      );
     }
 
-    const tokens = await this.getTokens(
-      newAdmin.id,
-      newAdmin.email,
-    );
-    await this.updateRefreshToken(
-      newAdmin.id,
-      tokens.refresh_token,
-    );
+    const tokens = await this.getTokens(newAdmin.id, newAdmin.email);
+    await this.updateRefreshToken(newAdmin.id, tokens.refresh_token);
 
     res.cookie('refresh_token', tokens.refresh_token, {
       maxAge: Number(process.env.COOKIE_TIME),
@@ -110,7 +107,7 @@ export class AuthAdminService {
     }
 
     const isValidPassword = await bcrypt.compare(
-      password, 
+      password,
       admin.hashed_password,
     );
     if (!isValidPassword) {
@@ -200,6 +197,49 @@ export class AuthAdminService {
     res.clearCookie('refresh_token');
 
     return { message: 'Admin logged out successfully' };
+  }
+
+  async changePass(
+    id: number,
+    changePassDto: {
+      old_password: string;
+      password: string;
+      confirm_password: string;
+    },
+  ) {
+    const admin = await this.prismaService.admins.findUnique({
+      where: { id : Number(id)},
+    });
+
+    if (!admin) {
+      return err(new BadRequestException('Admin not found'));
+    }
+    const isValidPassword = await bcrypt.compare(
+      changePassDto.old_password,
+      admin.hashed_password,
+    );
+
+    if (!isValidPassword) {
+      return err(new BadRequestException('Invalid password'));
+    }
+
+    if (changePassDto.password !== changePassDto.confirm_password) {
+      return err(new BadRequestException("Passwords don't match"));
+    }
+
+    const pass = await bcrypt.hash(changePassDto.password, 7);
+    await this.prismaService.admins.update({
+      where: {
+        id: admin.id,
+      },
+      data: {
+        hashed_password: pass,
+      },
+    });
+
+    return {
+      message: 'Password changed successfully',
+    };
   }
 
   create(createAuthDto: CreateAuthDto) {

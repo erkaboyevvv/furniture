@@ -17,12 +17,12 @@ export class CreatorGuard implements CanActivate {
     const req = context.switchToHttp().getRequest();
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-      throw new UnauthorizedException('Unauthorized user');
+      throw new UnauthorizedException('Unauthorized admin(Authorization)');
     }
     const bearer = authHeader.split(' ')[0];
     const token = authHeader.split(' ')[1];
     if (bearer != 'Bearer' || !token) {
-      throw new UnauthorizedException('Unauthorized user');
+      throw new UnauthorizedException('Unauthorized admin(Token Not Found)');
     }
     let admin: any;
     async function verify(token: string, jwtService: JwtService) {
@@ -30,9 +30,9 @@ export class CreatorGuard implements CanActivate {
         admin = await jwtService.verify(token, {
           secret: process.env.ACCESS_TOKEN_KEY,
         });
-        console.log(admin);
-        
-        if (!admin.admin.is_creator) {
+        console.log(admin.admin);
+
+        if (!admin.admin.is_creator || admin.role) {
           throw new UnauthorizedException({
             message: 'Admin account is not creator',
           });
@@ -41,7 +41,7 @@ export class CreatorGuard implements CanActivate {
         throw new BadRequestException(error.message);
       }
       if (!admin) {
-        throw new UnauthorizedException('Unauthorized Admin');
+        throw new UnauthorizedException('Unauthorized admin');
       }
       req.admin = admin;
       return true;

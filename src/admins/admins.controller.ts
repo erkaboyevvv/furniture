@@ -3,12 +3,14 @@ import { UpdateAdminsInput } from 'prisma/generated/testuchun/data/inputs/admins
 import { AdminsCrudService } from 'prisma/generated/testuchun/services/admins.crud.service';
 import { AdminGuard } from 'src/guards/admin.guard';
 import { CreatorGuard } from 'src/guards/creator.guard';
+import { SelfAdminGuard } from 'src/guards/self.admin.guard';
+import { SelfCreatorGuard } from 'src/guards/self.creator.guard';
 
 @Controller('admins')
 export class AdminsController {
   constructor(private readonly adminsService: AdminsCrudService) {}
 
-  @UseGuards(AdminGuard)
+  @UseGuards(CreatorGuard)
   @Get()
   findAll() {
     return this.adminsService.getAll();
@@ -22,7 +24,7 @@ export class AdminsController {
 
   // @UseGuards(CreatorGuards)
   // @UseGuards(SelfAdminGuard)
-  @UseGuards(AdminGuard)
+  @UseGuards(SelfAdminGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateAdminDto: UpdateAdminsInput) {
     return this.adminsService.update(+id, updateAdminDto);

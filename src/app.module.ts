@@ -22,6 +22,7 @@ import { RolesModule } from './roles/roles.module';
 import { AdminRolesModule } from './admin_roles/admin_roles.module';
 import { FurnitureLikesModule } from './furniture_likes/furniture_likes.module';
 import { FurnitureCommentsModule } from './furniture_comments/furniture_comments.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
